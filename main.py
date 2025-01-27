@@ -1,6 +1,7 @@
 import copy
 import random
 import pygame
+import asyncio
 
 pygame.init()
 
@@ -170,64 +171,57 @@ def check_endgame(hand_act, deal_score, play_score, result, totals, add):
     return result, totals, add
 
 # main game loop
-run = True
-while run:
-    # Run game at our framerate and fill screen with bg color
-    timer.tick(fps)
-    screen.fill('black')
+async def main():
+    game_active = False
+    initial_deal = False
+    my_hand = []
+    dealer_hand = []
+    outcome = 0
+    reveal_dealer = False
+    hand_active = False
 
-    # initial(first) deal to player and dealer
-    if initial_deal:
-        for i in range(2):
-            my_hand, game_deck = deal_cards(my_hand, game_deck)
-            dealer_hand, game_deck = deal_cards(dealer_hand, game_deck)
-        initial_deal = False
+    # Win , Loss, Draw
+    records = [0, 0, 0]
+    player_score = 0
+    dealer_score = 0
+    add_score = False
+    run = True
+    while run:
+        # Run game at our framerate and fill screen with bg color
+        timer.tick(fps)
+        screen.fill('black')
 
-    # once game is activted and dealt calculate socres and display cards
-    if game_active:
-        player_score = calculate_score(my_hand)
-        draw_cards(my_hand, dealer_hand, reveal_dealer)
-
-        # Calcaulte dealers score    
-        if reveal_dealer or player_score >= 21:
-            dealer_score = calculate_score(dealer_hand)
-            if dealer_score < 17:
+        # initial(first) deal to player and dealer
+        if initial_deal:
+            for i in range(2):
+                my_hand, game_deck = deal_cards(my_hand, game_deck)
                 dealer_hand, game_deck = deal_cards(dealer_hand, game_deck)
+            initial_deal = False
 
-        draw_scores(player_score, dealer_score)
+        # once game is activted and dealt calculate socres and display cards
+        if game_active:
+            player_score = calculate_score(my_hand)
+            draw_cards(my_hand, dealer_hand, reveal_dealer)
 
-    buttons = draw_game(game_active, records, outcome)
+            # Calcaulte dealers score    
+            if reveal_dealer or player_score >= 21:
+                dealer_score = calculate_score(dealer_hand)
+                if dealer_score < 17:
+                    dealer_hand, game_deck = deal_cards(dealer_hand, game_deck)
 
-    # Event handling, if quit pressed then exit game
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
-            run = False
+            draw_scores(player_score, dealer_score)
 
-        if event.type == pygame.MOUSEBUTTONUP:
-            if not game_active:
-                # if presses deal cards and game not active
-                if buttons[0].collidepoint(event.pos):
-                    game_active = True
-                    initial_deal = True
-                    game_deck = copy.deepcopy(decks * one_deck)
-                    my_hand = []
-                    dealer_hand = []
-                    outcome = 0
-                    hand_active = True
-                    reveal_dealer = False
-                    add_score = True
-            else:
-                # if pressed hit and game is active and can hit at all
-                if buttons[0].collidepoint(event.pos) and player_score < 21 and hand_active:
-                    my_hand, game_deck = deal_cards(my_hand, game_deck)
+        buttons = draw_game(game_active, records, outcome)
 
-                # if pressed stand and game is active (end turn)
-                elif buttons[1].collidepoint(event.pos) and not reveal_dealer:
-                    reveal_dealer = True
-                    hand_active = False
-                # Restart game
-                elif len(buttons) == 3:
-                    if buttons[2].collidepoint(event.pos):
+        # Event handling, if quit pressed then exit game
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                run = False
+
+            if event.type == pygame.MOUSEBUTTONUP:
+                if not game_active:
+                    # if presses deal cards and game not active
+                    if buttons[0].collidepoint(event.pos):
                         game_active = True
                         initial_deal = True
                         game_deck = copy.deepcopy(decks * one_deck)
@@ -237,17 +231,42 @@ while run:
                         hand_active = True
                         reveal_dealer = False
                         add_score = True
-                        player_score = 0
-                        dealer_score = 0
+                else:
+                    # if pressed hit and game is active and can hit at all
+                    if buttons[0].collidepoint(event.pos) and player_score < 21 and hand_active:
+                        my_hand, game_deck = deal_cards(my_hand, game_deck)
 
-    # if player busted
-    if hand_active and player_score >= 21:
-        hand_active = False
-        reveal_dealer = True
+                    # if pressed stand and game is active (end turn)
+                    elif buttons[1].collidepoint(event.pos) and not reveal_dealer:
+                        reveal_dealer = True
+                        hand_active = False
+                    # Restart game
+                    elif len(buttons) == 3:
+                        if buttons[2].collidepoint(event.pos):
+                            game_active = True
+                            initial_deal = True
+                            game_deck = copy.deepcopy(decks * one_deck)
+                            my_hand = []
+                            dealer_hand = []
+                            outcome = 0
+                            hand_active = True
+                            reveal_dealer = False
+                            add_score = True
+                            player_score = 0
+                            dealer_score = 0
 
-    outcome, records, add_score = check_endgame(hand_active, dealer_score, player_score, outcome, records, add_score)
-    # Update display
-    pygame.display.flip()
+        # if player busted
+        if hand_active and player_score >= 21:
+            hand_active = False
+            reveal_dealer = True
 
+        outcome, records, add_score = check_endgame(hand_active, dealer_score, player_score, outcome, records, add_score)
+        
+        # Update display
+        pygame.display.flip()
+        await asyncio.sleep(0)
 # End of game loop
+
+asyncio.run(main())
+
 pygame.quit()
