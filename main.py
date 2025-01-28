@@ -29,7 +29,7 @@ initial_deal = False
 my_hand = []
 dealer_hand = []
 outcome = 0
-reveal_dealer = False
+reveal_dealer = True
 hand_active = False
 
 # Win , Loss, Draw
@@ -173,9 +173,10 @@ def check_endgame(hand_act, deal_score, play_score, result, totals, add):
 # main game loop
 async def main():
     game_active = False
-    initial_deal = False
+    initial_deal = True
     my_hand = []
     dealer_hand = []
+    game_deck = copy.deepcopy(decks * one_deck)
     outcome = 0
     reveal_dealer = False
     hand_active = False
@@ -201,6 +202,7 @@ async def main():
         # once game is activted and dealt calculate socres and display cards
         if game_active:
             player_score = calculate_score(my_hand)
+            dealer_score = calculate_score(dealer_hand[1])
             draw_cards(my_hand, dealer_hand, reveal_dealer)
 
             # Calcaulte dealers score    
