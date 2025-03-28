@@ -3,6 +3,7 @@ pipeline {
 
   environment {
     REPO = "ghcr.io/saharariel/blackjack-web"
+    VERSION_FILE = "version.txt"  // File that stores the current version number
   }
 
   stages {
@@ -37,6 +38,15 @@ pipeline {
             sh """
                 docker build -t ${IMAGE_TAG} .
              """
+        }
+      }
+    }
+
+    stage('Update Version') {
+      steps {
+        script {
+          // After successful push, update the version in version.txt
+          writeFile(file: VERSION_FILE, text: "${env.VERSION}")
         }
       }
     }
