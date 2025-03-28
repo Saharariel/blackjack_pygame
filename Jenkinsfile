@@ -2,7 +2,7 @@ pipeline {
   agent any
 
   environment {
-    REPO = "ghcr.io/Saharariel/blackjack-web"
+    REPO = "ghcr.io/saharariel/blackjack-web"
   }
 
   stages {
@@ -29,7 +29,7 @@ pipeline {
       steps {
         withCredentials([string(credentialsId: 'github-pat', variable: 'GITHUB_PAT')]) {
           sh """
-            echo "$GITHUB_PAT" | docker login ghcr.io -u Saharariel --password-stdin
+            echo "$GITHUB_PAT" | docker login ghcr.io -u saharariel --password-stdin
           """
         }
       }
