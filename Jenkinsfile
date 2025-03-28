@@ -11,16 +11,32 @@ pipeline {
         checkout scm
       }
     }
-
+    stage('Read Current Version') {
+      steps {
+        script {
+          // Read the current version from the version.txt file
+          if (fileExists(VERSION_FILE)) {
+             // If the file exists, read the version number
+              def version = readFile(VERSION_FILE).trim()
+              def versionParts = version.split("\\.")  // Split the version into parts (major.minor.patch)
+              def patch = versionParts[2].toInteger() + 1  // Increment the patch version
+              env.VERSION = "${versionParts[0]}.${versionParts[1]}.${patch}"  // Increment patch version
+              } else {
+              // If the file doesn't exist, start with version 1.0.0
+              env.VERSION = "1.0.0"
+              }
+          echo "Current version: ${env.VERSION}"
+        }
+      }
+    }
     stage('Build Docker Image') {
       steps {
         script {
-          def commit = sh(script: "git rev-parse --short HEAD", returnStdout: true).trim()
-          env.IMAGE_TAG = "${REPO}:${commit}"
-
-          sh """
-            docker build -t ${IMAGE_TAG} .
-          """
+            // Build the Docker image with the new version tag
+            env.IMAGE_TAG = "${REPO}:${env.VERSION}"
+            sh """
+                docker build -t ${IMAGE_TAG} .
+             """
         }
       }
     }
